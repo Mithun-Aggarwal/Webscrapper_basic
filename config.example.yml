@@ -1,0 +1,15 @@
+start_url: https://www.w3.org/WAI/ER/tests/xhtml/testfiles/
+allowed_domain: www.w3.org
+output_dir: ./out
+state_dir: ./state
+max_pages: 20
+max_depth: 2
+respect_robots_txt: true
+allowed_extensions:
+  - ".pdf"
+follow_subdomains: false
+rate_limit_sec: 0.5
+timeout_sec: 20
+user_agent: Webscrapper-basic
+retries: 2
+ignore_query_params: true
