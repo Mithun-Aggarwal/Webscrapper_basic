@@ -24,6 +24,20 @@ The crawler keeps state in the `state/` directory:
 
 When `download` runs, it checks ETag/Last-Modified headers (or file hashes) to skip files that have not changed.
 
+## Dashboard
+
+Visualize the manifest with a simple Streamlit dashboard:
+
+```bash
+streamlit run dashboard.py
+```
+
+A config file path may be provided to choose a different state directory:
+
+```bash
+streamlit run dashboard.py -- --config config.yml
+```
+
 ## Smoke test
 
 Run the included script for a tiny end-to-end test against a public site:
