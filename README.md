@@ -12,7 +12,8 @@ python -m crawler download --config config.yml
 ```
 
 `discover` crawls pages within the configured domain, records downloadable files to `state/manifest.jsonl`, and prints a summary.
-`download` retrieves any files listed in the manifest, storing them under `out/` while skipping unchanged files on re-runs.
+`download` retrieves any files listed in the manifest and saves them under `out/`,
+replicating the site's domain and path. Unchanged files are skipped on re-runs.
 
 ## Incremental behaviour
 
