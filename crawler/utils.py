@@ -25,7 +25,7 @@ def is_within_domain(url: str, allowed_domain: str, follow_subdomains: bool) -> 
 def file_url_to_path(url: str) -> Path:
     """Convert a file URL to a relative local path."""
     parsed = urlparse(url)
-    return Path(parsed.path.lstrip("/"))
+    return Path(parsed.netloc) / parsed.path.lstrip("/")
 
 
 def request_with_retries(session: requests.Session, method: str, url: str, retries: int, timeout: int, **kwargs) -> requests.Response:
