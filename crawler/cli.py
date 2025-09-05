@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 from .config import load_config
@@ -13,7 +14,14 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="crawler")
     parser.add_argument("mode", choices=["discover", "download"], help="Operation mode")
     parser.add_argument("--config", required=True, help="Path to YAML config file")
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging to the console",
+    )
     args = parser.parse_args(argv)
+
+    logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING)
 
     cfg = load_config(Path(args.config))
     if args.mode == "discover":
