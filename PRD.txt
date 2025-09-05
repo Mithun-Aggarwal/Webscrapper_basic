@@ -1,0 +1,207 @@
+Product: Domain Crawler & Incremental File Harvester
+Problem
+
+Teams need a reliable way to enumerate and fetch regulatory files (e.g., PBAC pages) scattered across a single domain. Manual collection is error-prone, slow, and hard to keep up-to-date.
+
+Goals (MVP)
+
+Discover Mode: Crawl within a single domain, list all downloadable files, and log them (no downloads).
+
+Download Mode: Download the discovered files to a local folder, incrementally updating only new/changed items.
+
+Reproducible State: Keep simple, file-based state and manifest to allow idempotent re-runs.
+
+Respectful & Safe: Stay in-domain, (optionally) respect robots.txt, rate-limit, and retry transient errors.
+
+Config-Driven: No code edits needed to switch domains or folders—use a YAML config.
+
+Non-Goals (MVP)
+
+No JavaScript rendering.
+
+No multi-domain federation.
+
+No full-text indexing/search.
+
+No DB; keep state file-based.
+
+No fancy scheduler—run manually or via cron.
+
+Users
+
+Data/ops folks collecting official docs.
+
+Engineers feeding a downstream RAG pipeline.
+
+Key Scenarios
+
+First run on a domain to build an initial manifest of all files.
+
+Periodic re-run to download only updated/new files.
+
+Tight scoping by domain, depth, file types.
+
+Functional Requirements
+
+Config: YAML file with keys listed in the prompt above.
+
+Crawl:
+
+Normalize and deduplicate URLs; optional query stripping.
+
+Same-domain policy; optional subdomain following.
+
+Respect robots.txt (toggle).
+
+Discovery:
+
+Detect files by extension and/or Content-Type.
+
+Log to state/manifest.jsonl with "discovered" status.
+
+Download:
+
+Mirror URL path under output_dir.
+
+Use HEAD → ETag/Last-Modified; else hash content post-download.
+
+Update manifest with "downloaded", "skipped_unchanged", or "failed".
+
+State/Logs:
+
+visited_urls.txt, manifest.jsonl, logs/crawl.log.
+
+Summaries printed to stdout at end of each run.
+
+Non-Functional Requirements
+
+Simplicity: Minimal deps; readable code.
+
+Politeness: Rate limiting; bounded retries; timeouts.
+
+Performance: Single-process is fine; no concurrency required for MVP.
+
+Reliability: Safe resume; manifest never corrupted (append-only writes; use temp file then atomic move).
+
+Constraints
+
+Must run in standard Python 3.10+ environment without OS-specific tricks.
+
+Some sites may block frequent requests—respect rate limits.
+
+Risks & Mitigations
+
+Robots blocking → Provide toggle and clear logs.
+
+No ETag/Last-Modified → Fallback to content hashing.
+
+Large sites → max_pages/max_depth caps; allow extension filters.
+
+Success Metrics
+
+First run: manifests all files with <1% dead-link errors on target site.
+
+Second run: ≥95% of unchanged files reported as skipped_unchanged.
+
+Clear, actionable logs; easy handover to downstream pipelines.
+
+Milestones
+
+M1 (Day 1–2): CLI, config loader, robots fetch, basic crawler with dedupe, discover mode + manifest writing.
+
+M2 (Day 3–4): Download mode with HEAD heuristics, hashing, and incremental skip.
+
+M3 (Day 5): README, smoke script, polish logs, minimal test.
+
+3) Feature file (Gherkin)
+
+Save as: features/crawler_mvp.feature
+
+Feature: Domain-scoped discovery and incremental file download
+
+  Background:
+    Given a YAML config at "config.yml" with:
+      | key                 | value                               |
+      | start_url           | https://example.org/landing         |
+      | allowed_domain      | example.org                         |
+      | output_dir          | ./out                               |
+      | state_dir           | ./state                             |
+      | allowed_extensions  | .pdf,.doc,.docx,.xls,.xlsx,.csv,.zip|
+      | respect_robots_txt  | true                                |
+      | follow_subdomains   | false                               |
+      | ignore_query_params | true                                |
+      | max_pages           | 1000                                |
+      | max_depth           | 6                                   |
+
+  Scenario: Step-1 discovery logs files without downloading
+    When I run "python -m crawler discover --config config.yml"
+    Then a file "state/manifest.jsonl" should exist
+    And each discovered downloadable link is recorded with status "discovered"
+    And the console summary prints total pages visited and file counts per extension
+
+  Scenario: Step-2 download fetches new files and records them
+    Given "state/manifest.jsonl" contains entries with status "discovered"
+    When I run "python -m crawler download --config config.yml"
+    Then files are saved under "out/" mirroring their URL paths
+    And manifest entries for downloaded files have status "downloaded"
+    And the console summary prints number of downloaded and failed files
+
+  Scenario: Re-run is incremental and skips unchanged files
+    Given I have previously run the download step successfully
+    When I run "python -m crawler download --config config.yml" again
+    Then most entries are recorded with status "skipped_unchanged"
+    And no previously downloaded file is fetched again if ETag or Last-Modified is unchanged
+    And if those headers are absent, identical content hashes lead to skip on subsequent runs
+
+  Scenario: Robots.txt is respected when enabled
+    Given "respect_robots_txt" is true in the config
+    When I run discovery
+    Then URLs disallowed by robots.txt are never fetched
+    And a note appears in "logs/crawl.log" for disallowed paths
+
+  Scenario: Domain boundaries are enforced
+    Given "follow_subdomains" is false
+    When the crawler finds links outside "example.org" or to other subdomains
+    Then those links are ignored and not logged in the manifest
+
+  Scenario: Query normalization reduces duplicates
+    Given "ignore_query_params" is true
+    When the crawler encounters URLs that differ only by query string
+    Then only one canonical URL is visited and logged
+
+Bonus: example config.example.yml
+start_url: "https://pbac.pbs.gov.au/"
+allowed_domain: "pbac.pbs.gov.au"
+
+output_dir: "./out"
+state_dir: "./state"
+
+allowed_extensions:
+  - ".pdf"
+  - ".doc"
+  - ".docx"
+  - ".xls"
+  - ".xlsx"
+  - ".csv"
+  - ".zip"
+
+respect_robots_txt: true
+follow_subdomains: false
+ignore_query_params: true
+
+max_pages: 10000
+max_depth: 10
+
+rate_limit_sec: 0.5
+timeout_sec: 20
+retries: 2
+user_agent: "MVP-Crawler/0.1 (+contact: you@example.com)"
+
+Bonus: example requirements.txt
+requests
+beautifulsoup4
+PyYAML
+tqdm
+
+Bonus: manifest record example (one line of manifest.jsonl)
+{"discovered_at":"2025-09-05T03:22:11Z","source_page":"https://pbac.pbs.gov.au/meeting/2025-07/","file_url":"https://pbac.pbs.gov.au/docs/July-2025/PBAC-minutes.pdf","file_path":"out/docs/July-2025/PBAC-minutes.pdf","status":"downloaded","http_status":200,"etag":"\"abc123\"","last_modified":"Wed, 16 Jul 2025 10:12:00 GMT","sha256":"b5f5...","size_bytes":1048576}
