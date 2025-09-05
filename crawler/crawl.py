@@ -31,9 +31,9 @@ def discover(cfg: Config) -> Tuple[int, Dict[str, int]]:
     """
     logs_dir = Path("logs")
     logs_dir.mkdir(exist_ok=True)
-    handler = logging.FileHandler(logs_dir / "crawl.log")
-    console = logging.StreamHandler()
-    logging.basicConfig(level=logging.INFO, handlers=[handler, console])
+    if not any(isinstance(h, logging.FileHandler) for h in logger.handlers):
+        logger.addHandler(logging.FileHandler(logs_dir / "crawl.log"))
+    logger.setLevel(logging.INFO)
 
     state = CrawlState(cfg.state_dir)
     session = requests.Session()

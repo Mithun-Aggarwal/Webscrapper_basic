@@ -16,10 +16,6 @@ from .utils import (
 )
 
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 
 def download(cfg: Config) -> Tuple[int, int, int]:
