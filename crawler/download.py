@@ -32,7 +32,7 @@ def download(cfg: Config) -> Tuple[int, int, int]:
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
 
     downloaded = skipped = failed = 0
-    with tqdm(total=len(state.manifest), desc="Downloading") as pbar:
+    with tqdm(total=len(state.manifest), desc="Downloading", dynamic_ncols=True) as pbar:
         for url, entry in state.manifest.items():
             tqdm.write(f"Fetching {url}")
             try:
