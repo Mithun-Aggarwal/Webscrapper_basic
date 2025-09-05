@@ -53,7 +53,7 @@ def discover(cfg: Config) -> Tuple[int, Dict[str, int]]:
     pages_visited = 0
     ext_counts: Dict[str, int] = defaultdict(int)
 
-    with tqdm(total=cfg.max_pages, desc="Discovering") as pbar:
+    with tqdm(total=cfg.max_pages, desc="Discovering", dynamic_ncols=True) as pbar:
         while queue and pages_visited < cfg.max_pages:
             url, depth = queue.popleft()
             norm = normalize_url(url, cfg.ignore_query_params)
