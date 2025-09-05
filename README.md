@@ -7,8 +7,8 @@ Simple config-driven domain crawler and file downloader.
 ```bash
 pip install -r requirements.txt
 cp config.example.yml config.yml
-python -m crawler discover --config config.yml
-python -m crawler download --config config.yml
+python3 -m crawler discover --config config.yml
+python3 -m crawler download --config config.yml
 ```
 
 `discover` crawls pages within the configured domain, records downloadable files to `state/manifest.jsonl`, and prints a summary.
