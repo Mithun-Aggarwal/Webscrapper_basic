@@ -1,0 +1,14 @@
+{
+  "vector_store_id": "vs_68bd36268f188191af0d6d830dc1c05d",
+  "counts": {
+    "manifest_rows": 10989,
+    "store_rows": 0,
+    "adds": 10989,
+    "reuploads": 0,
+    "metadata_updates": 0,
+    "deletes": 0
+  },
+  "timestamp": 1757284443,
+  "dry_run": true,
+  "prune": false
+}

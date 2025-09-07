@@ -1,0 +1,15 @@
+start_url: https://www.pbs.gov.au/pbs/home
+allowed_domain: www.pbs.gov.au
+output_dir: ./out
+state_dir: ./state
+max_pages: 20000
+max_depth: 200
+respect_robots_txt: true
+allowed_extensions:
+  - ".pdf"
+follow_subdomains: false
+rate_limit_sec: 0.5
+timeout_sec: 20
+user_agent: Webscrapper-basic
+retries: 2
+ignore_query_params: true
